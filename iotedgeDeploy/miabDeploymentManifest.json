@@ -1,0 +1,179 @@
+{
+    "modulesContent": {
+        "$edgeAgent": {
+            "properties.desired": {
+                "schemaVersion": "1.1",
+                "runtime": {
+                    "type": "docker",
+                    "settings": {
+                        "minDockerVersion": "v1.25",
+                        "loggingOptions": ""
+                    }
+                },
+                "modules": {
+                    "azuremetricscollector": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-metrics-collector:1.0"
+                        },
+                        "type": "docker",
+                        "env": {
+                            "UploadTarget": {
+                                "value": "IoTMessage"
+                            },
+                            "ResourceID": {
+                                "value": "Industrial connector for IoTEdge"
+                            },
+                            "MetricsEndpointsCSV": {
+                                "value": "http://edgeHub:9600/metrics,http://edgeAgent:9600/metrics"
+                            },
+                            "CompressForUpload": {
+                                "value": "false"
+                            },
+                            "TransformForIoTCentral": {
+                                "value": "true"
+                            }
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0",
+                        "startupOrder": 4
+                    },
+                    "opcpublisher": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/opc-publisher:2.8.2",
+                            "createOptions": "{\"Hostname\":\"opcpublisher\",\"Cmd\":[\"PkiRootPath=/appdata/pki\",\"--PublishedNodesFile=/appdata/published_nodes.json\",\"--LogFileName=/appdata/publisher.log\",\"--MessagingMode=PubSub\",\"--MessageEncoding=Json\",\"--FullFeaturedMessage=true\",\"--BatchSize=1\",\"--DiagnosticsInterval=20\",\"--AutoAcceptUntrustedCertificates=true\",\"--RuntimeStateReporting=true\",\"--EnableRoutingInfo=true\"],\"HostConfig\":{\"Mounts\":[{\"Type\":\"volume\",\"Target\":\"/appdata\",\"Source\":\"miabgw\",\"Consistency\":\"consistent\",\"RW\":true}]}}"
+                        },
+                        "type": "docker",
+                        "version": "1.0",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "startupOrder": 3
+                    },
+                    "miabgateway": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/iotc-miab-gateway:latest-amd64",
+                            "createOptions": "{\"Hostname\":\"miabgateway\",\"ExposedPorts\":{\"9229/tcp\":{}},\"HostConfig\":{\"PortBindings\":{\"9229/tcp\":[{\"HostPort\":\"9229\"}]},\"Mounts\":[{\"Type\":\"volume\",\"Target\":\"/data/storage/\",\"Source\":\"miabgw\",\"Consistency\":\"consistent\",\"RW\":true}]}}"
+                        },
+                        "type": "docker",
+                        "env": {
+                            "opcPublisherModuleId": {
+                                "value": "opcpublisher"
+                            }
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0",
+                        "startupOrder": 4
+                    },
+                    "modbus_rtu_thg03": {
+                        "type": "docker",
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge/modbus:1.0.5",
+                            "createOptions": "{\"HostConfig\":{\"Devices\":[{\"PathOnHost\":\"/dev/ttyS4\",\"PathInContainer\":\"/dev/ttyS1\",\"CgroupPermissions\":\"rwm\"}]}}"
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0"
+                    }
+                },
+                "systemModules": {
+                    "edgeAgent": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-agent:1.2",
+                            "createOptions": ""
+                        },
+                        "type": "docker",
+                        "env": {
+                            "ExperimentalFeatures__Enabled": {
+                                "value": "true"
+                            },
+                            "ExperimentalFeatures__EnableGetLogs": {
+                                "value": "true"
+                            },
+                            "ExperimentalFeatures__EnableUploadLogs": {
+                                "value": "true"
+                            },
+                            "ExperimentalFeatures__EnableMetrics": {
+                                "value": "true"
+                            }
+                        }
+                    },
+                    "edgeHub": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-hub:1.2",
+                            "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"443/tcp\":[{\"HostPort\":\"443\"}],\"5671/tcp\":[{\"HostPort\":\"5671\"}],\"8883/tcp\":[{\"HostPort\":\"8883\"}]}}}"
+                        },
+                        "type": "docker",
+                        "env": {
+                            "SslProtocols": {
+                                "value": "tls1.2"
+                            }
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "startupOrder": 0
+                    }
+                }
+            }
+        },
+        "$edgeHub": {
+            "properties.desired": {
+                "schemaVersion": "1.1",
+                "routes": {
+                    "publisherruntimeinfo": "FROM /messages/modules/opcpublisher/outputs/runtimeinfo INTO BrokeredEndpoint(\"/modules/iiotadapter/inputs/publisherruntimeinfo\")",
+                    "publishertogateway": "FROM /messages/* WHERE $connectionModuleId = 'opcpublisher' INTO BrokeredEndpoint(\"/modules/miabgateway/inputs/publisherdata\")",
+                    "metrics2iothub": "FROM /messages/* WHERE $connectionModuleId = 'azuremetricscollector' INTO $upstream",
+                    "miabgateway": "FROM /messages/* WHERE $connectionModuleId = 'miabgateway' INTO $upstream",
+                    "modbustogateway": "FROM /messages/modules/modbus_rtu_thg03/outputs/modbusOutput INTO $upstream"
+                },
+                "storeAndForwardConfiguration": {
+                    "timeToLiveSecs": 7200
+                }
+            }
+        },
+        "miabgateway": {
+            "properties.desired": {
+                "wpDebugTelemetry": true
+            }
+        },
+        "modbus_rtu_thg03": {
+            "properties.desired": {
+                "PublishInterval": "1000",
+                "SlaveConfigs": {
+                    "Slave01": {
+                        "SlaveConnection": "/dev/ttyS1",
+                        "HwId": "eYc",
+                        "BaudRate": "9600",
+                        "DataBits": "8",
+                        "StopBits": "1",
+                        "Parity": "NONE",
+                        "FlowControl": "NONE",
+                        "Operations": {
+                            "Op01": {
+                                "PollingInterval": "1000",
+                                "UnitId": "1",
+                                "StartAddress": "400564",
+                                "Count": "1",
+                                "DisplayName": "Temperature"
+                            },
+                            "Op02": {
+                                "PollingInterval": "1000",
+                                "UnitId": "1",
+                                "StartAddress": "400566",
+                                "Count": "1",
+                                "DisplayName": "Humidity"
+                            },
+                            "Op03": {
+                                "PollingInterval": "1000",
+                                "UnitId": "1",
+                                "StartAddress": "400562",
+                                "Count": "1",
+                                "DisplayName": "CO2"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

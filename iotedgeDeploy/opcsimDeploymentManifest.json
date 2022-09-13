@@ -1,0 +1,140 @@
+{
+    "modulesContent": {
+        "$edgeAgent": {
+            "properties.desired": {
+                "schemaVersion": "1.1",
+                "runtime": {
+                    "type": "docker",
+                    "settings": {
+                        "minDockerVersion": "v1.25",
+                        "loggingOptions": ""
+                    }
+                },
+                "modules": {
+                    "azuremetricscollector": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-metrics-collector:1.0"
+                        },
+                        "type": "docker",
+                        "env": {
+                            "UploadTarget": {
+                                "value": "IoTMessage"
+                            },
+                            "ResourceID": {
+                                "value": "Industrial connector for IoTEdge"
+                            },
+                            "MetricsEndpointsCSV": {
+                                "value": "http://edgeHub:9600/metrics,http://edgeAgent:9600/metrics"
+                            },
+                            "CompressForUpload": {
+                                "value": "false"
+                            },
+                            "TransformForIoTCentral": {
+                                "value": "true"
+                            }
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0",
+                        "startupOrder": 5
+                    },
+                    "opcplc": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/opc-plc:latest-debug",
+                            "createOptions": "{\"Hostname\":\"opcplc\",\"Cmd\":[\"--pn=50000\",\"--autoaccept\",\"--sn=25\",\"--sr=10\",\"--st=uint\",\"--fn=10\",\"--fr=1\",\"--ft=uint\",\"--ctb\",\"--scn\",\"--lid\",\"--lsn\",\"--ref\",\"--gn=10\"],\"HostConfig\":{\"Mounts\":[{\"Type\":\"volume\",\"Target\":\"/appdata\",\"Source\":\"miabgw\",\"Consistency\":\"consistent\",\"RW\":true}],\"PortBindings\":{\"50000/tcp\":[{\"HostPort\":\"50000\"}]}},\"ExposedPorts\":{\"50000/tcp\":{}}}"
+                        },
+                        "type": "docker",
+                        "version": "1.0",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "startupOrder": 2
+                    },
+                    "opcpublisher": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/opc-publisher:2.8.2",
+                            "createOptions": "{\"Hostname\":\"opcpublisher\",\"Cmd\":[\"PkiRootPath=/appdata/pki\",\"--PublishedNodesFile=/appdata/published_nodes.json\",\"--LogFileName=/appdata/publisher.log\",\"--MessagingMode=PubSub\",\"--MessageEncoding=Json\",\"--FullFeaturedMessage=true\",\"--BatchSize=1\",\"--DiagnosticsInterval=20\",\"--AutoAcceptUntrustedCertificates=true\",\"--RuntimeStateReporting=true\",\"--EnableRoutingInfo=true\"],\"HostConfig\":{\"Mounts\":[{\"Type\":\"volume\",\"Target\":\"/appdata\",\"Source\":\"miabgw\",\"Consistency\":\"consistent\",\"RW\":true}]}}"
+                        },
+                        "type": "docker",
+                        "version": "1.0",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "startupOrder": 3
+                    },
+                    "miabgateway": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/iotc-miab-gateway:latest-amd64",
+                            "createOptions": "{\"ExposedPorts\":{\"9229/tcp\":{}},\"HostConfig\":{\"PortBindings\":{\"9229/tcp\":[{\"HostPort\":\"9229\"}]},\"Binds\":[\"/var/miabgw/storage:/data/storage/\"]}}"
+                        },
+                        "type": "docker",
+                        "env": {
+                            "opcPublisherModuleId": {
+                                "value": "opcpublisher"
+                            }
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0",
+                        "startupOrder": 4
+                    }
+                },
+                "systemModules": {
+                    "edgeAgent": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-agent:1.2",
+                            "createOptions": ""
+                        },
+                        "type": "docker",
+                        "env": {
+                            "ExperimentalFeatures__Enabled": {
+                                "value": "true"
+                            },
+                            "ExperimentalFeatures__EnableGetLogs": {
+                                "value": "true"
+                            },
+                            "ExperimentalFeatures__EnableUploadLogs": {
+                                "value": "true"
+                            },
+                            "ExperimentalFeatures__EnableMetrics": {
+                                "value": "true"
+                            }
+                        }
+                    },
+                    "edgeHub": {
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-hub:1.2",
+                            "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"443/tcp\":[{\"HostPort\":\"443\"}],\"5671/tcp\":[{\"HostPort\":\"5671\"}],\"8883/tcp\":[{\"HostPort\":\"8883\"}]}}}"
+                        },
+                        "type": "docker",
+                        "env": {
+                            "SslProtocols": {
+                                "value": "tls1.2"
+                            }
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "startupOrder": 0
+                    }
+                }
+            }
+        },
+        "$edgeHub": {
+            "properties.desired": {
+                "schemaVersion": "1.1",
+                "routes": {
+                    "publisherruntimeinfo": "FROM /messages/modules/opcpublisher/outputs/runtimeinfo INTO BrokeredEndpoint(\"/modules/iiotadapter/inputs/publisherruntimeinfo\")",
+                    "publishertogateway": "FROM /messages/* WHERE $connectionModuleId = 'opcpublisher' INTO BrokeredEndpoint(\"/modules/miabgateway/inputs/publisherdata\")",
+                    "metrics2iothub": "FROM /messages/* WHERE $connectionModuleId = 'azuremetricscollector' INTO $upstream",
+                    "miabgateway": "FROM /messages/* WHERE $connectionModuleId = 'miabgateway' INTO $upstream"
+                },
+                "storeAndForwardConfiguration": {
+                    "timeToLiveSecs": 7200
+                }
+            }
+        },
+        "miabgateway": {
+            "properties.desired": {
+                "wpDebugTelemetry": true
+            }
+        }
+    }
+}
