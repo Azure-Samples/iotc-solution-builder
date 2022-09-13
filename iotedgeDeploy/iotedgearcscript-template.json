@@ -1,0 +1,82 @@
+{
+    "properties": {
+        "mode": "Incremental",
+        "debugSetting": {
+            "detailLevel": "requestContent, responseContent"
+        },
+        "parameters": {
+            "serverName": {
+                "value": "${serverName}"
+            },
+            "commandToExecute": {
+                "value": "${commandToExecute}"
+            },
+            "fileUris": {
+                "value": "${fileUris}"
+            }
+        },
+        "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+                "serverName": {
+                    "type": "String"
+                },
+                "resourceProviderAndType": {
+                    "type": "String",
+                    "defaultValue": "Microsoft.HybridCompute/machines"
+                },
+                "apiVersion": {
+                    "type": "String",
+                    "defaultValue": "2021-05-20"
+                },
+                "date": {
+                    "defaultValue": "[utcNow()]",
+                    "type": "String"
+                },
+                "fileUris": {
+                    "type": "Array"
+                },
+                "commandToExecute": {
+                    "type": "SecureString"
+                }
+            },
+            "variables": {
+                "deploymentName": "[concat('CustomScript-',parameters('date'))]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Resources/deployments",
+                    "apiVersion": "2020-10-01",
+                    "name": "[variables('deploymentName')]",
+                    "properties": {
+                        "mode": "Incremental",
+                        "template": {
+                            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                            "contentVersion": "1.0.0.0",
+                            "resources": [
+                                {
+                                    "name": "[concat(parameters('serverName'),'/',variables('deploymentName'))]",
+                                    "type": "[concat(parameters('resourceProviderAndType'),'/extensions')]",
+                                    "location": "[resourceGroup().location]",
+                                    "apiVersion": "[parameters('apiVersion')]",
+                                    "properties": {
+                                        "publisher": "Microsoft.Azure.Extensions",
+                                        "type": "CustomScript",
+                                        "typeHandlerVersion": "2.1",
+                                        "autoUpgradeMinorVersion": true,
+                                        "settings": {},
+                                        "protectedSettings": {
+                                            "commandToExecute": "[parameters('commandToExecute')]",
+                                            "fileUris": "[parameters('fileUris')]"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
