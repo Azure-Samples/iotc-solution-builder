@@ -1,7 +1,7 @@
 {
     "name": "iotc-solution-builder",
     "productName": "IoT Central Solution Builder",
-    "version": "1.2.0",
+    "version": "1.0.0",
     "description": "IoT Central Solution Builder",
     "main": ".webpack/main",
     "scripts": {
@@ -19,7 +19,7 @@
         "react",
         "typescript"
     ],
-    "author": "",
+    "author": "Microsoft Corporation",
     "license": "MIT",
     "config": {
         "forge": "./forge.config.js"
