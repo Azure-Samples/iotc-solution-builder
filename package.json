@@ -19,10 +19,7 @@
         "react",
         "typescript"
     ],
-    "author": {
-        "name": "sseiber",
-        "email": "scott.seiber@outlook.com"
-    },
+    "author": "",
     "license": "MIT",
     "config": {
         "forge": "./forge.config.js"

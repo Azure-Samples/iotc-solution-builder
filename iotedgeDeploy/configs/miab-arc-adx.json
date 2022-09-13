@@ -2719,7 +2719,7 @@
                         "createResourceGroup.resourceGroupName"
                     ]
                 ],
-                "arcResourceGroupName": "iotc-rg-scottsarc",
+                "arcResourceGroupName": "iotc-rg-arc",
                 "deploymentName": [
                     "iotc-arc-",
                     [
@@ -2727,7 +2727,7 @@
                     ]
                 ],
                 "serverName": [
-                    "scotts-miab"
+                    "miab"
                 ],
                 "subdomain": [
                     [
