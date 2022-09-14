@@ -2647,7 +2647,7 @@
                                 },
                                 "fileUris": {
                                     "value": [
-                                        "https://raw.githubusercontent.com/iot-for-all/iotc-solution-builder/main/iotedgeDeploy/arcedgeapplyconfig.sh"
+                                        "https://raw.githubusercontent.com/Azure-Samples/iotc-solution-builder/main/iotedgeDeploy/arcedgeapplyconfig.sh"
                                     ]
                                 }
                             },

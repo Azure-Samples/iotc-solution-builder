@@ -62,7 +62,7 @@ module.exports = {
             name: '@electron-forge/publisher-github',
             config: {
               repository: {
-                owner: 'iot-for-all',
+                owner: 'Azure-Samples',
                 name: 'iotc-solution-builder',
               },
             }, 
