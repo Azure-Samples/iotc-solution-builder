@@ -25,7 +25,7 @@ apply_edge_config() {
 
     echo "configuring edge"
     sudo mkdir -p /etc/aziot
-    sudo wget https://raw.githubusercontent.com/iot-for-all/iotc-solution-builder/main/iotedgeDeploy/config.toml -O /etc/aziot/iotcsb_config.toml
+    sudo wget https://raw.githubusercontent.com/Azure-Samples/iotc-solution-builder/main/iotedgeDeploy/config.toml -O /etc/aziot/iotcsb_config.toml
     sudo sed -i "s#\(id_scope = \).*#\1\"$sid\"#g;s#\(registration_id = \).*#\1\"$did\"#g;s#\(value = \).*#\1\"$sky\" }#g" /etc/aziot/iotcsb_config.toml
 
     echo "applying configuration"

@@ -159,7 +159,7 @@ export default class MenuBuilder {
                 {
                     label: 'Documentation',
                     click() {
-                        void shell.openExternal('https://github.com/iot-for-all');
+                        void shell.openExternal('https://github.com/Azure-Samples');
                     }
                 }
             ]
@@ -243,7 +243,7 @@ export default class MenuBuilder {
                     {
                         label: 'Documentation',
                         click() {
-                            void shell.openExternal('https://github.com/iot-for-all');
+                            void shell.openExternal('https://github.com/Azure-Samples');
                         }
                     }
                 ]
